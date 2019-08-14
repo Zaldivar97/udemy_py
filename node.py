@@ -1,6 +1,4 @@
-from uuid import uuid4
-
-from verification import Verification
+from utility.verification import Verification
 from blockchain import Blockchain
 
 
@@ -20,8 +18,8 @@ class Node:
         return choice
 
     def print_blockchain_elements(self):
-        if len(self.blockchain.get_chain()) > 0:
-            for block in self.blockchain.get_chain():
+        if len(self.blockchain.chain) > 0:
+            for block in self.blockchain.chain:
                 print(block)
         else:
             print("There's no blocks")
@@ -50,7 +48,7 @@ class Node:
                 self.print_blockchain_elements()
             elif user_choice == 'q':
                 waiting_for_input = False
-            if not Verification.verify_chain(self.blockchain.get_chain()):
+            if not Verification.verify_chain(self.blockchain.chain):
                 self.print_blockchain_elements()
                 waiting_for_input = False
             print('Balance of {}: {:.2f}'.format(self.id, self.blockchain.get_balance()))
@@ -58,5 +56,6 @@ class Node:
             print("User left")
 
 
-node = Node()
-node.listen_for_input()
+if __name__ == '__main__':
+    node = Node()
+    node.listen_for_input()

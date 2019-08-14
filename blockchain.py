@@ -1,11 +1,10 @@
 from functools import reduce
 import json
 
-from hash_util import hash_block
-from verification import Verification
+from utility.hash_util import hash_block
+from utility.verification import Verification
 from block import Block
 from transaction import Transaction
-import pickle
 
 MINING_REWARD = 10
 
@@ -18,8 +17,13 @@ class Blockchain:
         self.load_data()
         self.hosting = hosting_node_id
 
-    def get_chain(self):
+    @property
+    def chain(self):
         return self.__chain[:]
+
+    @chain.setter
+    def chain(self, val):
+        self.__chain = val
 
     def get_open_transactions(self):
         return self.__open_transactions[:]
@@ -43,7 +47,7 @@ class Blockchain:
         try:
             with open('blockchain.txt', mode='r') as f:
                 file_content = f.readlines()
-                self.__chain = json.loads(file_content[0][:-1])
+                self.chain = json.loads(file_content[0][:-1])
                 self.__open_transactions = json.loads(file_content[1])
                 updated_blockchain = []
                 for block in self.__chain:
@@ -54,7 +58,7 @@ class Blockchain:
 
                     updated_blockchain.append(updated_block)
 
-                self.__chain = updated_blockchain
+                self.chain = updated_blockchain
                 updated_transactions = []
                 for tx in self.__open_transactions:
                     current_transaction = Transaction(tx['sender'], tx['recipient'], tx['amount'])

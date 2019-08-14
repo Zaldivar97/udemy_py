@@ -1,5 +1,5 @@
 from collections import OrderedDict  # para trabajar las transacciones con el mismo orden, para no afectar el hash
-from printable import Printable
+from utility.printable import Printable
 
 
 class Transaction(Printable):
