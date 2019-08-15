@@ -1,4 +1,5 @@
 from utility.hash_util import hash_block, hash_string_256
+from wallet import Wallet
 
 
 class Verification:
@@ -6,7 +7,7 @@ class Verification:
     @staticmethod
     def verify_transaction(transaction, get_balance):
         sender_balance = get_balance()
-        return sender_balance >= transaction.amount
+        return sender_balance >= transaction.amount and Wallet.verify_transaction(transaction)
 
     @staticmethod
     def valid_proof(new_transactions, last_hash, proof):
