@@ -17,7 +17,15 @@ class Blockchain:
         self.__chain = [genesis_block]
         self.__open_transactions = []
         self.load_data()
-        self.hosting = hosting_node_id
+        self.__hosting = hosting_node_id
+
+    @property
+    def hosting(self):
+        return self.__hosting
+
+    @hosting.setter
+    def hosting(self, val):
+        self.__hosting = val
 
     @property
     def chain(self):
@@ -78,10 +86,12 @@ class Blockchain:
         return proof
 
     def get_balance(self):
-        tx_sender = [[tx.amount for tx in block.transactions if tx.sender == self.hosting] for block in self.__chain]
-        open_tx_sender = [tx.amount for tx in self.__open_transactions if tx.sender == self.hosting]
+        if self.__hosting is None:
+            return None
+        tx_sender = [[tx.amount for tx in block.transactions if tx.sender == self.__hosting] for block in self.__chain]
+        open_tx_sender = [tx.amount for tx in self.__open_transactions if tx.sender == self.__hosting]
         tx_sender.append(open_tx_sender)
-        tx_receiver = [[tx.amount for tx in block.transactions if tx.recipient == self.hosting] for block in
+        tx_receiver = [[tx.amount for tx in block.transactions if tx.recipient == self.__hosting] for block in
                        self.__chain]
 
         amount_sent = reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_sender) > 0 else 0, tx_sender, 0)
@@ -90,7 +100,7 @@ class Blockchain:
         return amount_received - amount_sent
 
     def add_transaction(self, recipient, sender, signature, amount=1.0):
-        if self.hosting is None:
+        if self.__hosting is None:
             return False
         transaction = Transaction(sender, recipient, signature, amount)
         if Verification.verify_transaction(transaction, self.get_balance):
@@ -100,24 +110,24 @@ class Blockchain:
         return False
 
     def mine_block(self):
-        if self.hosting is None:
-            return False
+        if self.__hosting is None:
+            return None
         last_block = self.__chain[-1]
         hashed_block = hash_block(last_block)
 
         proof = self.proof_of_work()
 
-        transaction_reward = Transaction('MINING', self.hosting, '', MINING_REWARD)
+        transaction_reward = Transaction('MINING', self.__hosting, '', MINING_REWARD)
         copied_open_transactions = self.__open_transactions[:]
         for tx in copied_open_transactions:
             if not Wallet.verify_transaction(tx):
-                return False
+                return None
         copied_open_transactions.append(transaction_reward)
         block = Block(len(self.__chain), hashed_block, copied_open_transactions, proof)
         self.__chain.append(block)
         self.__open_transactions = []
         self.save_data()
-        return True
+        return block
 
 #def get_last_value():
  #   return self.chain[-1]
