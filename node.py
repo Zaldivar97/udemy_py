@@ -47,7 +47,11 @@ def get_chain():
                                                 [tx.__dict__ for tx in block_el.transactions],
                                                 block_el.proof, block_el.time) for block_el
                                           in blockchain.chain]]
-    return jsonify(chain), 200
+    response = {
+        'message': 'fetched chain successfully',
+        'blockchain': chain
+    }
+    return jsonify(response), 200
 
 
 @app.route('/balance', methods=['GET'])
@@ -55,7 +59,7 @@ def balance():
     balance = blockchain.get_balance()
     if balance is not None:
         response = {
-            'message': 'Fetched balance succesfully',
+            'message': 'Fetched balance successfully',
             'funds': blockchain.get_balance()
         }
         return jsonify(response), 200
@@ -63,6 +67,23 @@ def balance():
         response = {
             'message': 'Loading balance failed',
             'wallet_set_up': wallet.public_key is not None
+        }
+        return jsonify(response), 500
+
+
+@app.route('/transactions', methods=['GET'])
+def get_open_transactions():
+    transactions = blockchain.get_open_transactions()
+    if transactions:
+        converted_trasactions = [tx.__dict__ for tx in transactions]
+        response = {
+            'message': 'fetched transactions successfully',
+            'transactions': converted_trasactions
+        }
+        return jsonify(response), 200
+    else:
+        response = {
+            'message': 'There\'s no open transactions'
         }
         return jsonify(response), 500
 
@@ -77,7 +98,7 @@ def add_transaction():
     values = request.get_json()
     if not values:
         response = {
-            'message': 'That is no data found'
+            'message': 'no data found'
         }
         return jsonify(response), 400
     required_fields = ['recipient', 'amount']
@@ -91,7 +112,7 @@ def add_transaction():
     signature = wallet.sign_transaction(wallet.public_key, recipient, amount)
     if blockchain.add_transaction(recipient, wallet.public_key, signature, amount):
         response = {
-            'message': 'Transaction added succesfully',
+            'message': 'Transaction added successfully',
             'transaction': {
                 'sender': wallet.public_key,
                 'recipient': recipient,
@@ -115,7 +136,7 @@ def mine():
         copied_block = block.__dict__.copy()
         copied_block['transactions'] = [tx.__dict__ for tx in copied_block['transactions']]
         response = {
-            'message': 'Block added succesfully',
+            'message': 'Block added successfully',
             'block': copied_block,
             'funds': blockchain.get_balance()
         }

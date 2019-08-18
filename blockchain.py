@@ -7,7 +7,6 @@ from utility.verification import Verification
 from block import Block
 from transaction import Transaction
 
-
 MINING_REWARD = 10
 
 
@@ -39,12 +38,12 @@ class Blockchain:
         return self.__open_transactions[:]
 
     def save_data(self):
-        with open('blockchain.txt', mode='w') as f:
-            saveable_blockchain = [block.__dict__ for block in [Block(block_el.index, block_el.previous_hash,
-                                                                      [tx.__dict__ for tx in block_el.transactions],
-                                                                      block_el.proof, block_el.time) for block_el
-                                                                in self.__chain]]
-            f.write(json.dumps(saveable_blockchain))  # Ó json.dump(blockchain, f)
+        with open("blockchain.txt", mode='w') as f:
+            savable_blockchain = [block.__dict__ for block in [Block(block_el.index, block_el.previous_hash,
+                                                                     [tx.__dict__ for tx in block_el.transactions],
+                                                                     block_el.proof, block_el.time) for block_el
+                                                               in self.__chain]]
+            f.write(json.dumps(savable_blockchain))  # Ó json.dump(blockchain, f)
             f.write('\n')
             savable_transactions = [transaction.__dict__ for transaction in self.__open_transactions]
             f.write(json.dumps(savable_transactions))
@@ -129,14 +128,5 @@ class Blockchain:
         self.save_data()
         return block
 
-#def get_last_value():
- #   return self.chain[-1]
-
-
-
-
-
-
-
-
-
+# def get_last_value():
+#   return self.chain[-1]
