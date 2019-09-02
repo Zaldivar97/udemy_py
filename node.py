@@ -176,6 +176,8 @@ def broadcast_block():
         }
         return jsonify(response), 400
     block = values['block']
+    test = block['index']
+
     if block['index'] == blockchain.chain[-1].index + 1:
         if blockchain.add_block(block):
             response = {
@@ -188,7 +190,11 @@ def broadcast_block():
             }
             return jsonify(response), 500
     elif block['index'] > blockchain.chain[-1].index + 1:
-        pass
+        response = {
+            'message': 'blockchain differ from local blockchain'
+        }
+        blockchain.resolve_conflicts = True
+        return jsonify(response), 200
     else:
         response = {'message': 'Blockchain is shorter, block not added'}
         return jsonify(response), 409
@@ -197,6 +203,9 @@ def broadcast_block():
 
 @app.route('/mine', methods=['POST'])
 def mine():
+    if blockchain.resolve_conflicts:
+        response = {'message': 'Resolve conflicts first, block not added'}
+        return jsonify(response), 409
     block = blockchain.mine_block()
     if block is not None:
         copied_block = block.__dict__.copy()
@@ -213,6 +222,17 @@ def mine():
             'wallet_set_up': wallet.public_key is not None
         }
         return jsonify(response), 500
+
+
+@app.route('/sync', methods=['POST'])
+def resolve_conflicts():
+    replaced = blockchain.resolve()
+    if replaced:
+        response = {'message': 'chain was replaced'}
+    else:
+        response = {'message': 'local chain kept'}
+
+    return jsonify(response), 200
 
 
 @app.route('/node', methods=['POST'])
@@ -288,4 +308,4 @@ if __name__ == '__main__':
     port = args.port
     wallet = Wallet(port)
     blockchain = Blockchain(wallet.public_key, port)
-    app.run(host='localhost', debug=True, port=port)
+    app.run(host='localhost', port=port)

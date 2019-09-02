@@ -17,6 +17,7 @@ class Blockchain:
         self.__chain = [genesis_block]
         self.__open_transactions = []
         self.__public_key = public_key
+        self.resolve_conflicts = False
         self.node_id = node_id
         self.__peers_nodes = set()
         self.load_data()
@@ -153,10 +154,33 @@ class Blockchain:
                 response = requests.post(url, json={'block': converted_block})
                 if response.status_code == 500 or response.status_code == 400:
                     print('Block declined')
-
+                if response.status_code == 409:
+                    self.resolve_conflicts = True
             except requests.exceptions.ConnectionError:
                 continue
         return block
+
+    def resolve(self):
+        winner_chain = self.__chain
+        replace = False
+        for node in self.__peers_nodes:
+            url = f'http://{node}/chain'
+            try:
+                response = requests.get(url)
+                node_chain = response.json()
+                node_chain = [Block.dict_to_object(block) for block in node_chain['blockchain']]
+                node_chain_len = len(node_chain)
+                local_chain_len = len(winner_chain)
+                if node_chain_len > local_chain_len and Verification.verify_chain(node_chain):
+                    winner_chain = node_chain
+                    replace = True
+            except requests.exceptions.ConnectionError:
+                continue
+        self.resolve_conflicts = False
+        self.__chain = winner_chain
+        if replace:
+            self.__open_transactions.clear()
+        return replace
 
     def add_block(self, block):
         transactions = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount'])
@@ -165,8 +189,7 @@ class Blockchain:
         hashes_match = hash_block(self.chain[-1]) == block['previous_hash']
         if not proof_is_valid or not hashes_match:
             return False
-        converted_block = Block(block['index'], block['previous_hash'], transactions, block['proof'],
-                                block['time'])
+        converted_block = Block.dict_to_object(block, transactions=transactions)
         self.__chain.append(converted_block)
         stored_transactions = self.__open_transactions[:]
         for itx in block['transactions']:
